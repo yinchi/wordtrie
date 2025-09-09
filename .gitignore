@@ -1,0 +1,14 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# WordTrie specific -- ignore word list files except compressed ones
+words*.txt
+!words*.txt.gz
