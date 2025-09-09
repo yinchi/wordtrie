@@ -1,5 +1,6 @@
 """A trie (prefix tree) for storing a set of strings."""
 
+import sys
 from gzip import open as gzip_open
 from os import PathLike
 from typing import Iterator, Sequence
@@ -58,20 +59,28 @@ class Trie:
         node = self[word]
         return node is not None and node.is_word
 
-    def insert(self, word: str) -> None:
+    def insert(self, word: str) -> bool:
         """Insert a word into the trie.
 
         Recurse into the child tries for each character in `word`.
         """
 
+        # Validate the word
+        if word and not (word.isalpha() and word.isupper()):
+            print(f"Word '{word}' must be capitalized A-Z only.", file=sys.stderr)
+            return False
+
+        if word in self:
+            print(f"Word '{word}' already in trie.", file=sys.stderr)
+            return False
+
         # If `word` is empty, mark this node as a word.
         if not word:
             self.is_word = True
-            return
+            return True
 
         # Pop the first character of `word`
         char, remaining = word[0], word[1:]
-        assert 'A' <= char <= 'Z', "Words must be capitalized A-Z only."
 
         # Create the children list if it doesn't exist
         if self.children is None:
@@ -85,6 +94,8 @@ class Trie:
         # Recurse into the child trie to insert the remainder of the word.
         self.n_descendants += 1
         self.children[index].insert(remaining)
+
+        return True
 
     def traverse(self, pattern: str, prefix: str = "") -> Iterator[str]:
         """Yield all words in the trie that match the given pattern.
