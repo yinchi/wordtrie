@@ -1,7 +1,7 @@
 
 """Manage a Scrabble hand of tiles and compute word scores.
 
-Run this file using `uv run scrabble <pattern> <trie_file>[.gz]`.
+Run this file using `uv run scrabble <pattern> <trie_file>[.gz] [<tiles>]`.
 """
 
 from collections import Counter
