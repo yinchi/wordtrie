@@ -4,15 +4,18 @@
 Run this file using `uv run scrabble <pattern> <trie_file>[.gz] [<tiles>]`.
 """
 
+import re
+import sys
 from collections import Counter
 from itertools import islice
 from pprint import pprint
-from collections import Counter
 from random import sample
-import re
 from sys import argv
 
 from wordtrie import Trie
+
+N_SHOW_BEST = 20  # Number of top scoring words to show
+N_SHOW_RANDOM = 10  # Number of random words to show
 
 values = {}
 
@@ -49,13 +52,15 @@ for letter in "BCMPFHVWY":
 for letter in "KJXQZ":
     default_tiles[letter] = 1
 
+
 def score(word: str) -> int:
     """Compute the Scrabble score for a word."""
     return sum(values[letter] for letter in word)
 
-def can_play(word: Counter, hand: Counter = default_tiles) -> bool:
+
+def can_play(word: Counter, hand: Counter | None = None) -> bool:
     """Can I play the word with my tiles?
-    
+
     Params:
         word: The word to play, as a Counter of letters
         hand: The current hand of tiles, as a Counter.  If playing Scrabble or a similar game,
@@ -63,11 +68,14 @@ def can_play(word: Counter, hand: Counter = default_tiles) -> bool:
     Returns:
         True if the word can be played, False if not enough tiles
     """
-    return not (word - hand)
+    if hand is None:
+        hand = default_tiles
+    return not word - hand
 
-def play(word: str, hand: Counter = default_tiles) -> bool:
+
+def play(word: str, hand: Counter | None = None) -> bool:
     """Play the word if possible, returning whether it was played.
-    
+
     Params:
         word: The word to play, in uppercase A-Zs
         hand: The current hand of tiles, as a Counter. If playing Scrabble or a similar game,
@@ -75,19 +83,24 @@ def play(word: str, hand: Counter = default_tiles) -> bool:
     Returns:
         True if the word was played, False if not enough tiles
     """
+    if hand is None:
+        hand = default_tiles
     cword = Counter(word)
     if can_play(cword, hand):
         hand.subtract(cword)
         return True
     return False
 
-def unplay(word: str, hand: Counter = default_tiles) -> None:
+
+def unplay(word: str, hand: Counter | None = None) -> None:
     """Return the tiles from a played word back to the hand.
 
     Params:
         word: The word to unplay, in uppercase A-Zs
         hand: The current hand of tiles, as a Counter
     """
+    if hand is None:
+        hand = default_tiles
     hand.update(Counter(word))
 
 
@@ -107,6 +120,7 @@ def test() -> None:
     print(f"Unplayed HELLO, now we have {hand['L']} Ls left")
     assert hand == default_tiles  # back to original state?
 
+
 def main() -> None:
     """Main function to run the scrabble script."""
 
@@ -114,7 +128,7 @@ def main() -> None:
     if len(argv) != 3 and len(argv) != 4:
         print("Usage: scrabble <pattern> <trie_file>[.gz] [<tiles>]")
         print("Example: scrabble W..D words.txt.gz")
-        exit(1)
+        sys.exit(1)
     pattern = argv[1]
     trie_file = argv[2]
     tiles = argv[3] if len(argv) == 4 else None
@@ -129,24 +143,22 @@ def main() -> None:
         print(f"Total tiles: {sum(hand.values())}")
     assert re.fullmatch(r"[A-Z.]+", pattern), "Pattern must be capitalized A-Z and . only."
 
-    N_SHOW = 20
-
     trie = Trie.from_file(trie_file, gzip=trie_file.endswith(".gz"))
     # TODO: incorporate the filtering into the traversal to avoid traversing unplayable branches
     filtered_words = [word for word in trie.traverse(pattern) if can_play(Counter(word), hand)]
     filtered_words.sort(key=score, reverse=True)
-    scored_words = [(word, score(word)) for word in islice(filtered_words, N_SHOW)]
+    scored_words = [(word, score(word)) for word in islice(filtered_words, N_SHOW_BEST)]
 
     print()
-    print(f"Top {min(N_SHOW, len(scored_words))} words I can play with my tiles "
+    print(f"Top {min(N_SHOW_BEST, len(scored_words))} words I can play with my tiles "
           f"matching '{pattern}':")
-    print("-"*100)
+    print("-" * 100)
     pprint(scored_words, width=100, compact=True)
 
-    n_random = min(10, len(filtered_words))
+    n_random = min(N_SHOW_RANDOM, len(filtered_words))
     print()
     print(f"{n_random} random words I can play with my tiles matching '{pattern}':")
-    print("-"*100)
+    print("-" * 100)
     random_words = sample(filtered_words, n_random)
     scored_words = [(word, score(word)) for word in random_words]
     pprint(scored_words, width=100, compact=True)

@@ -14,6 +14,5 @@ words = list(trie.traverse("W..D"))  # Find all words matching the pattern "W..D
 """
 
 from .trie import Trie
-from . import scrabble
 
-__all__ = ["Trie", "scrabble"]
+__all__ = ["Trie"]
