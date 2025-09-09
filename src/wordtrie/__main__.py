@@ -1,4 +1,8 @@
-"""Entry point for the wordtrie package."""
+"""Entry point for the wordtrie package.
+
+Run this file using `uv run wordtrie <pattern> <trie_file>[.gz]`.
+"""
+
 import re
 from pprint import pprint
 from sys import argv
