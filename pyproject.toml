@@ -12,6 +12,7 @@ dependencies = []
 [project.scripts]
 wordtrie = "wordtrie.__main__:main"
 scrabble = "wordtrie.scrabble:main"
+scrabble_test = "wordtrie.scrabble:test"
 
 [build-system]
 requires = ["uv_build>=0.8.9,<0.9.0"]

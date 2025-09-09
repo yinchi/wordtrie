@@ -58,7 +58,8 @@ def can_play(word: Counter, hand: Counter = default_tiles) -> bool:
     
     Params:
         word: The word to play, as a Counter of letters
-        hand: The current hand of tiles, as a Counter
+        hand: The current hand of tiles, as a Counter.  If playing Scrabble or a similar game,
+            add the tiles on the board to intersect with to the hand.
     Returns:
         True if the word can be played, False if not enough tiles
     """
@@ -69,7 +70,8 @@ def play(word: str, hand: Counter = default_tiles) -> bool:
     
     Params:
         word: The word to play, in uppercase A-Zs
-        hand: The current hand of tiles, as a Counter
+        hand: The current hand of tiles, as a Counter. If playing Scrabble or a similar game,
+            add the tiles on the board to intersect with to the hand.
     Returns:
         True if the word was played, False if not enough tiles
     """
@@ -88,8 +90,9 @@ def unplay(word: str, hand: Counter = default_tiles) -> None:
     """
     hand.update(Counter(word))
 
-def main() -> None:
-    """Main function to run the scrabble script."""
+
+def test() -> None:
+    """Test the scrabble functions."""
     pprint(list(Counter(default_tiles).items()), width=100, compact=True)
     print(f"Total tiles (excluding 2 blanks): {sum(default_tiles.values())}")
     print()
@@ -104,20 +107,33 @@ def main() -> None:
     print(f"Unplayed HELLO, now we have {hand['L']} Ls left")
     assert hand == default_tiles  # back to original state?
 
+def main() -> None:
+    """Main function to run the scrabble script."""
+
     # Test our word list
-    if len(argv) != 3:
-        print("Usage: scrabble <pattern> <trie_file>[.gz]")
+    if len(argv) != 3 and len(argv) != 4:
+        print("Usage: scrabble <pattern> <trie_file>[.gz] [<tiles>]")
         print("Example: scrabble W..D words.txt.gz")
         exit(1)
     pattern = argv[1]
     trie_file = argv[2]
+    tiles = argv[3] if len(argv) == 4 else None
+    if tiles:
+        assert re.fullmatch(r"[A-Z]+", tiles), "Tiles must be capitalized A-Z only."
+        hand = Counter(tiles)
+        print(f"Using custom tiles: {tiles}")
+        print(f"Total tiles: {sum(hand.values())}")
+    else:
+        hand = Counter(default_tiles)
+        print("Using default Scrabble tiles (excluding 2 blanks):")
+        print(f"Total tiles: {sum(hand.values())}")
     assert re.fullmatch(r"[A-Z.]+", pattern), "Pattern must be capitalized A-Z and . only."
 
     N_SHOW = 20
 
     trie = Trie.from_file(trie_file, gzip=trie_file.endswith(".gz"))
     # TODO: incorporate the filtering into the traversal to avoid traversing unplayable branches
-    filtered_words = [word for word in trie.traverse(pattern) if can_play(Counter(word))]
+    filtered_words = [word for word in trie.traverse(pattern) if can_play(Counter(word), hand)]
     filtered_words.sort(key=score, reverse=True)
     scored_words = [(word, score(word)) for word in islice(filtered_words, N_SHOW)]
 
